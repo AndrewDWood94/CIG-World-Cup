@@ -322,7 +322,7 @@ input:focus,select:focus{border-color:var(--green-mid);box-shadow:0 0 0 3px var(
     <div class="admin-gate" id="admin-gate">
       <div class="card">
         <p class="card-title">Admin access</p>
-        <p class="text-muted" style="margin-bottom:1rem">Enter the admin password to manage the sweepstake.</p>
+        <p class="text-muted" style="margin-bottom:1rem">Enter the admin password to manage the sweepstake. Default password is <strong>admin123</strong>.</p>
         <div class="field"><label>Password</label><input type="text" id="admin-pass-input" placeholder="Enter admin password" autocomplete="off"/></div>
         <button class="btn btn-primary btn-full" onclick="adminLogin()">Unlock admin &rarr;</button>
         <p class="text-muted mt-1" id="admin-login-msg"></p>
@@ -508,6 +508,10 @@ function initFromSheets() {
   fetch(FIREBASE_URL + '/sweepstake.json')
     .then(function(r) { if(!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
     .then(function(data) {
+      // Clear stale localStorage so Firebase is always source of truth
+      var keys = ['sw_participants','sw_drawdone','sw_scores','sw_ko_matches',
+                  'sw_settings','sw_team_stats','sw_gott'];
+      keys.forEach(function(k) { try { localStorage.removeItem(k); } catch(e) {} });
       if(data && typeof data === 'object') {
         Object.keys(data).forEach(function(k) {
           _cache[k] = data[k];
