@@ -450,6 +450,12 @@ var KNOCKOUT_STAGES=[
 ];
 
 var DEFAULT_SETTINGS={entryFee:5,adminPass:'admin123'};
+function safeSettings(){
+  if(!settings || typeof settings !== 'object') settings = Object.assign({}, DEFAULT_SETTINGS);
+  if(!settings.adminPass) settings.adminPass = DEFAULT_SETTINGS.adminPass;
+  if(!settings.entryFee && settings.entryFee !== 0) settings.entryFee = DEFAULT_SETTINGS.entryFee;
+  return settings;
+}
 var FIREBASE_URL = 'https://cig-world-cup-default-rtdb.europe-west1.firebasedatabase.app';
 var _saveQueue = {};
 var _saveTimer = null;
@@ -889,9 +895,10 @@ function renderLeaderboard(){
 
 //    ADMIN                                                                  
 function adminLogin(){
+  if(!settings || typeof settings !== 'object') settings = Object.assign({}, DEFAULT_SETTINGS);
   const input=document.getElementById('admin-pass-input').value;const msg=document.getElementById('admin-login-msg');
-  console.log('Login attempt. Input:', JSON.stringify(input), 'settings.adminPass:', JSON.stringify(settings.adminPass), 'DEFAULT:', JSON.stringify(DEFAULT_SETTINGS.adminPass), 'settings obj:', JSON.stringify(settings));
-  if(input===(settings.adminPass||DEFAULT_SETTINGS.adminPass)){
+  const correctPass = (settings && settings.adminPass) ? settings.adminPass : DEFAULT_SETTINGS.adminPass;
+  if(input===correctPass){
     adminUnlocked=true;document.getElementById('admin-gate').classList.add('admin-hidden');document.getElementById('admin-panel').classList.remove('admin-hidden');
     loadAdminSettings();renderAdminParticipants();renderAdminMatches();renderAdminKoScores();renderAdminGroupStatus();renderAdminTeamStats();renderDraw();
   }else showMsg(msg,'Incorrect password.','err');
@@ -1479,7 +1486,7 @@ function saveGott() {
 
 function initApp(){
   settings=load('sw_settings',DEFAULT_SETTINGS);
-  if(!settings || typeof settings !== 'object') settings = Object.assign({}, DEFAULT_SETTINGS);
+  safeSettings();
   participants=load('sw_participants',[]);
   scores=load('sw_scores',{});
   koMatches=load('sw_ko_matches',null);
@@ -1514,6 +1521,7 @@ function syncFromFirebase() {
       if(changed) {
         // Reload state variables and re-render current tab
         settings=load('sw_settings',DEFAULT_SETTINGS);
+        safeSettings();
         participants=load('sw_participants',[]);
         scores=load('sw_scores',{});
         koMatches=load('sw_ko_matches',null);
