@@ -490,8 +490,8 @@ function hideSaveIndicator() {
 }
 
 function load(k, fb) {
-  if(_cache[k] !== undefined) return _cache[k];
-  try { var v = localStorage.getItem(k); if(v !== null) return JSON.parse(v); } catch(e) {}
+  if(_cache[k] !== undefined && _cache[k] !== null) return _cache[k];
+  try { var v = localStorage.getItem(k); if(v !== null) { var p = JSON.parse(v); if(p !== null) return p; } } catch(e) {}
   return fb;
 }
 
@@ -508,16 +508,17 @@ function initFromSheets() {
   fetch(FIREBASE_URL + '/sweepstake.json')
     .then(function(r) { if(!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
     .then(function(data) {
-      // Clear stale localStorage so Firebase is always source of truth
-      var keys = ['sw_participants','sw_drawdone','sw_scores','sw_ko_matches',
-                  'sw_settings','sw_team_stats','sw_gott'];
-      keys.forEach(function(k) { try { localStorage.removeItem(k); } catch(e) {} });
       if(data && typeof data === 'object') {
+        // Firebase has data - clear localStorage and use Firebase as source of truth
+        var keys = ['sw_participants','sw_drawdone','sw_scores','sw_ko_matches',
+                    'sw_settings','sw_team_stats','sw_gott'];
+        keys.forEach(function(k) { try { localStorage.removeItem(k); } catch(e) {} });
         Object.keys(data).forEach(function(k) {
           _cache[k] = data[k];
           try { localStorage.setItem(k, JSON.stringify(data[k])); } catch(e) {}
         });
       }
+      // If data is null (empty database), _cache stays empty and defaults are used
       if(overlay) overlay.classList.add('hidden');
       setTimeout(function() { if(overlay) overlay.style.display='none'; }, 500);
       initApp();
@@ -712,6 +713,7 @@ function signUp(){
 }
 document.getElementById('input-name').addEventListener('keydown',e=>{if(e.key==='Enter')signUp()});
 function renderSignupPage(){
+  if(!settings) settings = Object.assign({}, DEFAULT_SETTINGS);
   const total=participants.length*(settings.entryFee||0);
   document.getElementById('entry-fee-display').textContent='\u00A3'+(settings.entryFee||0);
   document.getElementById('total-pot-display').textContent='\u00A3'+total;
@@ -888,6 +890,7 @@ function renderLeaderboard(){
 //    ADMIN                                                                  
 function adminLogin(){
   const input=document.getElementById('admin-pass-input').value;const msg=document.getElementById('admin-login-msg');
+  console.log('Login attempt. Input:', JSON.stringify(input), 'settings.adminPass:', JSON.stringify(settings.adminPass), 'DEFAULT:', JSON.stringify(DEFAULT_SETTINGS.adminPass), 'settings obj:', JSON.stringify(settings));
   if(input===(settings.adminPass||DEFAULT_SETTINGS.adminPass)){
     adminUnlocked=true;document.getElementById('admin-gate').classList.add('admin-hidden');document.getElementById('admin-panel').classList.remove('admin-hidden');
     loadAdminSettings();renderAdminParticipants();renderAdminMatches();renderAdminKoScores();renderAdminGroupStatus();renderAdminTeamStats();renderDraw();
@@ -1476,6 +1479,7 @@ function saveGott() {
 
 function initApp(){
   settings=load('sw_settings',DEFAULT_SETTINGS);
+  if(!settings || typeof settings !== 'object') settings = Object.assign({}, DEFAULT_SETTINGS);
   participants=load('sw_participants',[]);
   scores=load('sw_scores',{});
   koMatches=load('sw_ko_matches',null);
