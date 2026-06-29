@@ -587,57 +587,74 @@ function groupsCompletedCount(){
 
 //    KNOCKOUT GENERATION                                                    
 function generateKnockout(){
-  // Collect all group results
-  const groupResults={};
-  Object.keys(GROUPS).forEach(g=>{groupResults[g]=getGroupResult(g)});
-
-  // Identify best 8 third-place teams
-  const allThirds=Object.keys(GROUPS).map(g=>({...groupResults[g].third,group:g}));
-  const ranked8=allThirds.sort((a,b)=>b.pts-a.pts||b.gd-a.gd||b.gf-a.gf||a.name.localeCompare(b.name)).slice(0,8);
-  const qualified3rdGroups=ranked8.map(t=>t.group).sort().join('');
-
-  // Look up combination table
-  const combo=lookupCombination(qualified3rdGroups);
-  // combo[i] = which group's 3rd-place fills slot i (col order: 1A,1B,1D,1E,1G,1I,1K,1L)
-  // Map slot keys back
-  const slotAssignments={};
-  const slotKeys=['CEFHI','EFGIJ','BEFIJ','ABCDF','AEHIJ','CDFGH','DEIJL','EHIJK'];
-  slotKeys.forEach((sk,i)=>{
-    if(combo){
-      const grp=combo[i];
-      const t3=ranked8.find(t=>t.group===grp);
-      slotAssignments[sk]=t3||ranked8[i]||null;
-    } else {
-      slotAssignments[sk]=ranked8[i]||null;
-    }
+  // Build group results
+  var gr = {};
+  Object.keys(GROUPS).forEach(function(g){
+    var s = calcStandings(g);
+    gr[g] = {W:s[0], R:s[1], T3:s[2], T4:s[3]};
   });
 
-  // Build R32 matches
-  var r32=R32_TEMPLATE.map(function(tmpl){
-    function resolveTeam(side){
-      if(side.type==='W') return {team:groupResults[side.g].winner,label:'Winner Group '+side.g};
-      if(side.type==='R') return {team:groupResults[side.g].runnerUp,label:'Runner-up Group '+side.g};
-      if(side.type==='3') return {team:groupResults[side.g].third,label:'3rd Group '+side.g};
-      if(side.type==='4') return {team:groupResults[side.g].fourth,label:'4th Group '+side.g};
-      return {team:null,label:'TBD'};
-    }
-    var h=resolveTeam(tmpl.home),a=resolveTeam(tmpl.away);
-    return {id:tmpl.id,round:'r32',homeTeam:h.team,awayTeam:a.team,homeLabel:h.label,awayLabel:a.label,homeGoals:null,awayGoals:null,winner:null};
+  function team(type, g){
+    var t = gr[g][type];
+    return t || null;
+  }
+
+  // Official FIFA 2026 R32 bracket - hardcoded from official draw
+  // M1:  4th A  vs 2nd B      M2:  1st F  vs 2nd C
+  // M3:  1st E  vs 4th D      M4:  1st I  vs 3rd F
+  // M5:  1st G  vs 2nd I      M6:  1st D  vs 4th B
+  // M7:  1st H  vs 2nd J      M8:  1st K  vs 2nd L
+  // M9:  1st C  vs 2nd F      M10: 3rd E  vs 3rd I
+  // M11: 1st A  vs 2nd E      M12: 1st L  vs 3rd K
+  // M13: 1st B  vs 3rd J      M14: 2nd K  vs 4th L
+  // M15: 3rd D  vs 3rd G      M16: 1st J  vs 4th H
+  var r32 = [
+    {id:'M1',  round:'r32', homeTeam:team('T4','A'), awayTeam:team('R','B'),  homeGoals:null, awayGoals:null, winner:null},
+    {id:'M2',  round:'r32', homeTeam:team('W','F'),  awayTeam:team('R','C'),  homeGoals:null, awayGoals:null, winner:null},
+    {id:'M3',  round:'r32', homeTeam:team('W','E'),  awayTeam:team('T4','D'), homeGoals:null, awayGoals:null, winner:null},
+    {id:'M4',  round:'r32', homeTeam:team('W','I'),  awayTeam:team('T3','F'), homeGoals:null, awayGoals:null, winner:null},
+    {id:'M5',  round:'r32', homeTeam:team('W','G'),  awayTeam:team('R','I'),  homeGoals:null, awayGoals:null, winner:null},
+    {id:'M6',  round:'r32', homeTeam:team('W','D'),  awayTeam:team('T4','B'), homeGoals:null, awayGoals:null, winner:null},
+    {id:'M7',  round:'r32', homeTeam:team('W','H'),  awayTeam:team('R','J'),  homeGoals:null, awayGoals:null, winner:null},
+    {id:'M8',  round:'r32', homeTeam:team('W','K'),  awayTeam:team('R','L'),  homeGoals:null, awayGoals:null, winner:null},
+    {id:'M9',  round:'r32', homeTeam:team('W','C'),  awayTeam:team('R','F'),  homeGoals:null, awayGoals:null, winner:null},
+    {id:'M10', round:'r32', homeTeam:team('T3','E'), awayTeam:team('T3','I'), homeGoals:null, awayGoals:null, winner:null},
+    {id:'M11', round:'r32', homeTeam:team('W','A'),  awayTeam:team('R','E'),  homeGoals:null, awayGoals:null, winner:null},
+    {id:'M12', round:'r32', homeTeam:team('W','L'),  awayTeam:team('T3','K'), homeGoals:null, awayGoals:null, winner:null},
+    {id:'M13', round:'r32', homeTeam:team('W','B'),  awayTeam:team('T3','J'), homeGoals:null, awayGoals:null, winner:null},
+    {id:'M14', round:'r32', homeTeam:team('R','K'),  awayTeam:team('T4','L'), homeGoals:null, awayGoals:null, winner:null},
+    {id:'M15', round:'r32', homeTeam:team('T3','D'), awayTeam:team('T3','G'), homeGoals:null, awayGoals:null, winner:null},
+    {id:'M16', round:'r32', homeTeam:team('W','J'),  awayTeam:team('T4','H'), homeGoals:null, awayGoals:null, winner:null}
+  ];
+
+  // R16 pairings (winners of R32 matches)
+  // M1/M2 -> R16_1,  M3/M4 -> R16_2,  M5/M6 -> R16_3,  M7/M8 -> R16_4
+  // M9/M10 -> R16_5, M11/M12 -> R16_6, M13/M14 -> R16_7, M15/M16 -> R16_8
+  var r32pairs = [['M1','M2'],['M3','M4'],['M5','M6'],['M7','M8'],
+                  ['M9','M10'],['M11','M12'],['M13','M14'],['M15','M16']];
+  var r16 = r32pairs.map(function(pair, i){
+    return {id:'R16_'+(i+1), round:'r16', homeTeam:null, awayTeam:null,
+            homeLabel:'Winner '+pair[0], awayLabel:'Winner '+pair[1],
+            homeGoals:null, awayGoals:null, winner:null};
   });
 
-  // Build placeholder R16 (8 matches), QF (4), SF (2), Final (1)   winners TBD
-  const r16=Array.from({length:8},(_,i)=>({id:'R16_'+(i+1),round:'r16',homeTeam:null,awayTeam:null,homeLabel:'TBD',awayLabel:'TBD',homeGoals:null,awayGoals:null,winner:null}));
-  const qf=Array.from({length:4},(_,i)=>({id:'QF_'+(i+1),round:'qf',homeTeam:null,awayTeam:null,homeLabel:'TBD',awayLabel:'TBD',homeGoals:null,awayGoals:null,winner:null}));
-  const sf=Array.from({length:2},(_,i)=>({id:'SF_'+(i+1),round:'sf',homeTeam:null,awayTeam:null,homeLabel:'TBD',awayLabel:'TBD',homeGoals:null,awayGoals:null,winner:null}));
-  const fin=[{id:'FINAL',round:'final',homeTeam:null,awayTeam:null,homeLabel:'TBD',awayLabel:'TBD',homeGoals:null,awayGoals:null,winner:null}];
+  var qf = Array.from({length:4}, function(_,i){
+    return {id:'QF_'+(i+1), round:'qf', homeTeam:null, awayTeam:null,
+            homeLabel:'TBD', awayLabel:'TBD', homeGoals:null, awayGoals:null, winner:null};
+  });
+  var sf = Array.from({length:2}, function(_,i){
+    return {id:'SF_'+(i+1), round:'sf', homeTeam:null, awayTeam:null,
+            homeLabel:'TBD', awayLabel:'TBD', homeGoals:null, awayGoals:null, winner:null};
+  });
+  var fin = [{id:'FINAL', round:'final', homeTeam:null, awayTeam:null,
+              homeLabel:'TBD', awayLabel:'TBD', homeGoals:null, awayGoals:null, winner:null}];
 
-  koMatches=[...r32,...r16,...qf,...sf,...fin];
-  // Propagate any already-entered winners
+  koMatches = r32.concat(r16).concat(qf).concat(sf).concat(fin);
   propagateKoWinners();
-  save('sw_ko_matches',koMatches);
-  toast('Knockout bracket generated! \u26A1');
+  save('sw_ko_matches', koMatches);
+  toast('Knockout bracket generated!');
   renderKnockout();
-  if(adminUnlocked)renderAdminKoScores();
+  if(adminUnlocked) renderAdminKoScores();
 }
 
 function propagateKoWinners(){
