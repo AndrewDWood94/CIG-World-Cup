@@ -856,7 +856,7 @@ function renderKnockout(){
     return;
   }
   const rounds=[
-    {key:'r32',label:'Round of 32',matches:koMatches.filter(m=>m.round==='r32')},
+    {key:'r32',label:'Round of 32',matches:(function(){var all=koMatches.filter(m=>m.round==='r32');var order=['M1','M4','M3','M6','M2','M5','M7','M8','M11','M12','M9','M10','M15','M16','M13','M14'];return order.map(function(id){return all.find(m=>m.id===id);}).filter(Boolean);})()},
     {key:'r16',label:'Round of 16',matches:koMatches.filter(m=>m.round==='r16')},
     {key:'qf',label:'Quarter-finals',matches:koMatches.filter(m=>m.round==='qf')},
     {key:'sf',label:'Semi-finals',matches:koMatches.filter(m=>m.round==='sf')},
