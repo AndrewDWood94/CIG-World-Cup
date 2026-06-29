@@ -413,32 +413,23 @@ Object.entries(GROUPS).forEach(([g,d])=>d.teams.forEach(t=>ALL_TEAMS.push({...t,
 // Format: {matchId, home:{type,group}, away:{type,group}}
 // type: 'W'=winner, 'R'=runner-up, '3'=best 3rd (slot determined by combination table)
 var R32_TEMPLATE=[
-  {id:'M73', home:{type:'R',g:'A'}, away:{type:'R',g:'B'}},
-  {id:'M74', home:{type:'W',g:'E'}, away:{type:'3',slot:'ABCDF'}},
-  {id:'M75', home:{type:'W',g:'F'}, away:{type:'R',g:'C'}},
-  {id:'M76', home:{type:'W',g:'C'}, away:{type:'R',g:'F'}},
-  {id:'M77', home:{type:'W',g:'I'}, away:{type:'3',slot:'CDFGH'}},
-  {id:'M78', home:{type:'R',g:'E'}, away:{type:'R',g:'I'}},
-  {id:'M79', home:{type:'W',g:'A'}, away:{type:'3',slot:'CEFHI'}},
-  {id:'M80', home:{type:'W',g:'L'}, away:{type:'3',slot:'EHIJK'}},
-  {id:'M81', home:{type:'W',g:'D'}, away:{type:'3',slot:'BEFIJ'}},
-  {id:'M82', home:{type:'W',g:'G'}, away:{type:'3',slot:'AEHIJ'}},
-  {id:'M83', home:{type:'R',g:'K'}, away:{type:'R',g:'L'}},
-  {id:'M84', home:{type:'W',g:'H'}, away:{type:'R',g:'J'}},
-  {id:'M85', home:{type:'W',g:'B'}, away:{type:'3',slot:'EFGIJ'}},
-  {id:'M86', home:{type:'W',g:'J'}, away:{type:'R',g:'H'}},
-  {id:'M87', home:{type:'W',g:'K'}, away:{type:'3',slot:'DEIJL'}},
-  {id:'M88', home:{type:'R',g:'D'}, away:{type:'R',g:'G'}}
+  {id:'M1',  home:{type:'4',g:'A'}, away:{type:'R',g:'B'}},
+  {id:'M2',  home:{type:'W',g:'F'}, away:{type:'R',g:'C'}},
+  {id:'M3',  home:{type:'W',g:'E'}, away:{type:'4',g:'D'}},
+  {id:'M4',  home:{type:'W',g:'I'}, away:{type:'3',g:'F'}},
+  {id:'M5',  home:{type:'W',g:'G'}, away:{type:'R',g:'I'}},
+  {id:'M6',  home:{type:'W',g:'D'}, away:{type:'4',g:'B'}},
+  {id:'M7',  home:{type:'W',g:'H'}, away:{type:'R',g:'J'}},
+  {id:'M8',  home:{type:'W',g:'K'}, away:{type:'R',g:'L'}},
+  {id:'M9',  home:{type:'W',g:'C'}, away:{type:'R',g:'F'}},
+  {id:'M10', home:{type:'3',g:'E'}, away:{type:'3',g:'I'}},
+  {id:'M11', home:{type:'W',g:'A'}, away:{type:'R',g:'E'}},
+  {id:'M12', home:{type:'W',g:'L'}, away:{type:'3',g:'K'}},
+  {id:'M13', home:{type:'W',g:'B'}, away:{type:'3',g:'J'}},
+  {id:'M14', home:{type:'R',g:'K'}, away:{type:'4',g:'L'}},
+  {id:'M15', home:{type:'3',g:'D'}, away:{type:'3',g:'G'}},
+  {id:'M16', home:{type:'W',g:'J'}, away:{type:'4',g:'H'}}
 ];
-
-// Map the 8 best 3rd-place teams to the 8 R32 slots in rank order (best 3rd gets best slot).
-// This is a sweepstake approximation - for exact FIFA placement see official bracket.
-var SLOT_KEYS=['CEFHI','EFGIJ','BEFIJ','ABCDF','AEHIJ','CDFGH','DEIJL','EHIJK'];
-
-function lookupCombination(groups8sorted){
-  // Returns null - we use positional fallback in all cases
-  return null;
-}
 
 var KNOCKOUT_STAGES=[
   {key:'r32',label:'Round of 32',pts:2},
@@ -542,15 +533,15 @@ function initFromSheets() {
 
 var settings=load('sw_settings',DEFAULT_SETTINGS);
 var participants=load('sw_participants',[]);
-var scores=load('sw_scores',{});          // group stage scores
-var koMatches=load('sw_ko_matches',null); // knockout bracket [{id,home,away,homeGoals,awayGoals,winner},...]
+var scores=load('sw_scores',{});
+var koMatches=load('sw_ko_matches',null);
 var drawDone=load('sw_drawdone',false);
 var adminUnlocked=false;
 
 function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
 function scoreKey(g,h,a){return g+'__'+h.replace(/[\s&\/]/g,'_')+'__'+a.replace(/[\s&\/]/g,'_')}
 function toast(msg){const el=document.getElementById('toast');el.textContent=msg;el.classList.add('show');setTimeout(()=>el.classList.remove('show'),2800)}
-function showMsg(el,text,type){el.textContent=text;el.style.color=type==='err'?'var(--red)':'var(--green)';setTimeout(()=>el.textContent='',3500)}
+function showMsg(el,text,type){el.textContent=text;el.style.color=type==='err'?'#c0392b':'#1a4a8a';setTimeout(()=>el.textContent='',3500)}
 function shuffle(arr){const a=[...arr];for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
 
 function groupFixtures(gk){
@@ -575,8 +566,7 @@ function calcStandings(gk){
   return teams.sort((a,b)=>b.pts-a.pts||b.gd-a.gd||b.gf-a.gf||a.name.localeCompare(b.name));
 }
 function getGroupResult(gk){
-  // Returns {winner, runnerUp, third, fourth} team objects with standings data
-  const s=calcStandings(gk);
+  var s=calcStandings(gk);
   return {winner:s[0],runnerUp:s[1],third:s[2],fourth:s[3]};
 }
 function allGroupsComplete(){
@@ -623,16 +613,15 @@ function generateKnockout(){
   });
 
   // Build R32 matches
-  const r32=R32_TEMPLATE.map(tmpl=>{
+  var r32=R32_TEMPLATE.map(function(tmpl){
     function resolveTeam(side){
       if(side.type==='W') return {team:groupResults[side.g].winner,label:'Winner Group '+side.g};
       if(side.type==='R') return {team:groupResults[side.g].runnerUp,label:'Runner-up Group '+side.g};
-      if(side.type==='3'){
-        const t=slotAssignments[side.slot];
-        return {team:t,label:t?'3rd Group '+t.group:'Best 3rd'};
-      }
+      if(side.type==='3') return {team:groupResults[side.g].third,label:'3rd Group '+side.g};
+      if(side.type==='4') return {team:groupResults[side.g].fourth,label:'4th Group '+side.g};
+      return {team:null,label:'TBD'};
     }
-    const h=resolveTeam(tmpl.home),a=resolveTeam(tmpl.away);
+    var h=resolveTeam(tmpl.home),a=resolveTeam(tmpl.away);
     return {id:tmpl.id,round:'r32',homeTeam:h.team,awayTeam:a.team,homeLabel:h.label,awayLabel:a.label,homeGoals:null,awayGoals:null,winner:null};
   });
 
@@ -768,7 +757,7 @@ function renderDraw(){
     h+='<div style="margin-bottom:16px"><div style="font-family:\'Bebas Neue\',sans-serif;font-size:15px;letter-spacing:.06em;color:var(--pitch-dark);margin-bottom:6px">Group '+g+'</div><div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:6px">';
     data.teams.forEach(t=>{
       const idx=ALL_TEAMS.findIndex(x=>x.name===t.name);const owner=participants.find(p=>p.team===idx);
-      h+='<div style="display:flex;align-items:center;gap:8px;padding:7px 10px;background:'+(owner?'var(--green-pale)':'var(--off-white)')+';border:1px solid '+(owner?'var(--green-mid)':'var(--border)')+';border-radius:var(--radius)"><span style="font-size:16px">'+t.flag+'</span><div><div style="font-size:12px;font-weight:500">'+t.name+'</div><div style="font-size:11px;color:var(--text-muted)">'+(owner?esc(owner.name):(drawDone?'Unassigned':'\u2014'))+'</div></div></div>';
+      h+='<div style="display:flex;align-items:center;gap:8px;padding:7px 10px;background:'+(owner?'#eef4fc':'#f8f9f7')+';border:1px solid '+(owner?'#1f5496':'#d8e2d8')+';border-radius:var(--radius)"><span style="font-size:16px">'+t.flag+'</span><div><div style="font-size:12px;font-weight:500">'+t.name+'</div><div style="font-size:11px;color:var(--text-muted)">'+(owner?esc(owner.name):(drawDone?'Unassigned':'\u2014'))+'</div></div></div>';
     });
     h+='</div></div>';
   });
@@ -785,7 +774,7 @@ function renderGroups(){
     standings.forEach((t,i)=>{
       const rc=i===0?'q1':i===1?'q2':i===2?'q3':'';
       const idx=ALL_TEAMS.findIndex(x=>x.name===t.name);const owner=participants.find(p=>p.team===idx);
-      html+='<tr class="'+rc+'"><td><span class="pos-badge pos-'+(i+1)+'">'+(i+1)+'</span></td><td><div class="team-cell"><span style="font-size:16px;flex-shrink:0">'+t.flag+'</span><div><div style="font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:110px">'+t.name+'</div>'+(owner?'<div style="font-size:10px;color:var(--text-muted)">'+esc(owner.name)+'</div>':'')+'</div></div></td><td class="num">'+t.p+'</td><td class="num">'+t.w+'</td><td class="num">'+t.d+'</td><td class="num">'+t.l+'</td><td class="num" style="color:'+(t.gd>0?'var(--green)':t.gd<0?'var(--red)':'inherit')+'">'+(t.gd>0?'+':'')+t.gd+'</td><td class="num" style="font-weight:600">'+t.pts+'</td></tr>';
+      html+='<tr class="'+rc+'"><td><span class="pos-badge pos-'+(i+1)+'">'+(i+1)+'</span></td><td><div class="team-cell"><span style="font-size:16px;flex-shrink:0">'+t.flag+'</span><div><div style="font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:110px">'+t.name+'</div>'+(owner?'<div style="font-size:10px;color:var(--text-muted)">'+esc(owner.name)+'</div>':'')+'</div></div></td><td class="num">'+t.p+'</td><td class="num">'+t.w+'</td><td class="num">'+t.d+'</td><td class="num">'+t.l+'</td><td class="num" style="color:'+(t.gd>0?'#1a4a8a':t.gd<0?'#c0392b':'inherit')+'">'+(t.gd>0?'+':'')+t.gd+'</td><td class="num" style="font-weight:600">'+t.pts+'</td></tr>';
     });
     html+='</tbody></table>';
     html+='<div style="padding:8px 10px;border-top:1px solid var(--border);background:var(--off-white)"><div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin-bottom:5px">Fixtures</div><div class="match-list">';
@@ -912,7 +901,7 @@ function renderAdminGroupStatus(){
   const count=groupsCompletedCount();const done=allGroupsComplete();
   const el=document.getElementById('admin-group-complete-status');
   if(!el)return;
-  el.innerHTML='<div style="display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:var(--radius);background:'+(done?'var(--green-pale)':'var(--off-white)')+';border:1px solid '+(done?'var(--green-mid)':'var(--border)')+'"><span style="font-size:20px">'+(done?'\u2705':'\u23F3')+'</span><div><div style="font-size:13px;font-weight:500">'+(done?'All group stages complete':'Group stages in progress')+'</div><div style="font-size:12px;color:var(--text-muted)">'+count+' / 12 groups fully scored</div></div></div>';
+  el.innerHTML='<div style="display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:var(--radius);background:'+(done?'#eef4fc':'#f8f9f7')+';border:1px solid '+(done?'#1f5496':'#d8e2d8')+'"><span style="font-size:20px">'+(done?'\u2705':'\u23F3')+'</span><div><div style="font-size:13px;font-weight:500">'+(done?'All group stages complete':'Group stages in progress')+'</div><div style="font-size:12px;color:var(--text-muted)">'+count+' / 12 groups fully scored</div></div></div>';
 }
 function renderAdminParticipants(){
   const el=document.getElementById('admin-participants-list');
@@ -1332,7 +1321,7 @@ function renderPrizes() {
       if(t.cs===0) return;
       var idx=ALL_TEAMS.findIndex(function(x){return x.name===t.name;});
       var owner=participants.find(function(p){return p.team===idx;});
-      html+='<div class="stat-row'+(i===0?' stat-lead':'')+'"><span>'+t.flag+' '+t.name+(owner?' <span style="font-size:11px;color:var(--text-muted)">'+esc(owner.name)+'</span>':'')+'</span><span class="stat-val">'+t.cs+'</span><span style="font-size:11px;color:var(--text-muted)">CS</span></div>';
+      html+='<div class="stat-row'+(i===0?' stat-lead':'')+'"><span>'+t.flag+' '+t.name+(owner?' <span style="font-size:11px;color:#8a9288">'+esc(owner.name)+'</span>':'')+'</span><span class="stat-val">'+t.cs+'</span><span style="font-size:11px;color:#8a9288">CS</span></div>';
     });
     html += '</div>';
   }
@@ -1349,7 +1338,7 @@ function renderPrizes() {
       if(t.ga===0) return;
       var idx=ALL_TEAMS.findIndex(function(x){return x.name===t.name;});
       var owner=participants.find(function(p){return p.team===idx;});
-      html+='<div class="stat-row'+(i===0?' stat-lead':'')+'"><span>'+t.flag+' '+t.name+(owner?' <span style="font-size:11px;color:var(--text-muted)">'+esc(owner.name)+'</span>':'')+'</span><span class="stat-val">'+t.ga+'</span><span style="font-size:11px;color:var(--text-muted)">GA</span></div>';
+      html+='<div class="stat-row'+(i===0?' stat-lead':'')+'"><span>'+t.flag+' '+t.name+(owner?' <span style="font-size:11px;color:#8a9288">'+esc(owner.name)+'</span>':'')+'</span><span class="stat-val">'+t.ga+'</span><span style="font-size:11px;color:#8a9288">GA</span></div>';
     });
     html += '</div>';
   }
@@ -1382,7 +1371,7 @@ function renderPrizes() {
     ptsData.forEach(function(t,i){
       var idx=ALL_TEAMS.findIndex(function(x){return x.name===t.name;});
       var owner=participants.find(function(p){return p.team===idx;});
-      html+='<div class="stat-row'+(i===0?' stat-lead':'')+'"><span>'+t.flag+' '+t.name+(owner?' <span style="font-size:11px;color:var(--text-muted)">'+esc(owner.name)+'</span>':'')+'</span><span class="stat-val">'+t.pts+'</span><span style="font-size:11px;color:var(--text-muted)">pts (GD '+t.gd+')</span></div>';
+      html+='<div class="stat-row'+(i===0?' stat-lead':'')+'"><span>'+t.flag+' '+t.name+(owner?' <span style="font-size:11px;color:#8a9288">'+esc(owner.name)+'</span>':'')+'</span><span class="stat-val">'+t.pts+'</span><span style="font-size:11px;color:#8a9288">pts (GD '+t.gd+')</span></div>';
     });
     html += '</div>';
   }
@@ -1399,7 +1388,7 @@ function renderPrizes() {
       if(t.cards===0) return;
       var idx=ALL_TEAMS.findIndex(function(x){return x.name===t.name;});
       var owner=participants.find(function(p){return p.team===idx;});
-      html+='<div class="stat-row'+(i===0?' stat-lead':'')+'"><span>'+t.flag+' '+t.name+(owner?' <span style="font-size:11px;color:var(--text-muted)">'+esc(owner.name)+'</span>':'')+'</span><span class="stat-val">'+t.cards+'</span><span style="font-size:11px;color:var(--text-muted)">'+t.yellow+'Y '+t.red+'R</span></div>';
+      html+='<div class="stat-row'+(i===0?' stat-lead':'')+'"><span>'+t.flag+' '+t.name+(owner?' <span style="font-size:11px;color:#8a9288">'+esc(owner.name)+'</span>':'')+'</span><span class="stat-val">'+t.cards+'</span><span style="font-size:11px;color:#8a9288">'+t.yellow+'Y '+t.red+'R</span></div>';
     });
     html += '</div>';
   }
