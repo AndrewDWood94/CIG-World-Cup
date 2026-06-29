@@ -849,6 +849,8 @@ function renderGroups(){
 //    KNOCKOUT TAB                                                           
 function renderKnockout(){
   const el=document.getElementById('knockout-content');
+  // Always propagate winners before rendering so scores already saved advance teams
+  if(koMatches) propagateKoWinners();
   if(!koMatches){
     const done=allGroupsComplete();
     const count=groupsCompletedCount();
