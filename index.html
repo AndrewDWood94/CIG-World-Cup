@@ -587,54 +587,73 @@ function groupsCompletedCount(){
 
 //    KNOCKOUT GENERATION                                                    
 function generateKnockout(){
-  // Build group results
+  // Get standings for each group
   var gr = {};
   Object.keys(GROUPS).forEach(function(g){
     var s = calcStandings(g);
     gr[g] = {W:s[0], R:s[1], T3:s[2], T4:s[3]};
   });
 
-  function team(type, g){
-    var t = gr[g][type];
-    return t || null;
+  function t(pos, g){
+    // pos: 'W'=1st, 'R'=2nd, 'T3'=3rd, 'T4'=4th
+    return (gr[g] && gr[g][pos]) ? gr[g][pos] : null;
   }
 
-  // Official FIFA 2026 R32 bracket - hardcoded from official draw
-  // M1:  4th A  vs 2nd B      M2:  1st F  vs 2nd C
-  // M3:  1st E  vs 4th D      M4:  1st I  vs 3rd F
-  // M5:  1st G  vs 2nd I      M6:  1st D  vs 4th B
-  // M7:  1st H  vs 2nd J      M8:  1st K  vs 2nd L
-  // M9:  1st C  vs 2nd F      M10: 3rd E  vs 3rd I
-  // M11: 1st A  vs 2nd E      M12: 1st L  vs 3rd K
-  // M13: 1st B  vs 3rd J      M14: 2nd K  vs 4th L
-  // M15: 3rd D  vs 3rd G      M16: 1st J  vs 4th H
+  // ── CONFIRMED OFFICIAL FIFA 2026 R32 BRACKET ──────────────────────────
+  // Source: ESPN, Yahoo Sports, FOX Sports (confirmed post-group stage)
+  // M1:  2nd A  (South Africa)   vs 2nd B  (Canada)
+  // M2:  1st C  (Brazil)         vs 2nd F  (Japan)
+  // M3:  1st E  (Germany)        vs 3rd D  (Paraguay)
+  // M4:  1st F  (Netherlands)    vs 2nd C  (Morocco)
+  // M5:  2nd E  (Ivory Coast)    vs 2nd I  (Norway)
+  // M6:  1st I  (France)         vs 3rd F  (Sweden)
+  // M7:  1st A  (Mexico)         vs 3rd E  (Ecuador)
+  // M8:  1st L  (England)        vs 3rd K  (DR Congo)
+  // M9:  1st G  (Belgium)        vs 3rd I  (Senegal)
+  // M10: 1st D  (USA)            vs 3rd B  (Bosnia & Herzegovina)
+  // M11: 1st H  (Spain)          vs 2nd J  (Austria)
+  // M12: 2nd K  (Portugal)       vs 2nd L  (Croatia)
+  // M13: 1st B  (Switzerland)    vs 3rd J  (Algeria)
+  // M14: 1st K  (Colombia)       vs 3rd L  (Ghana)
+  // M15: 2nd G  (Egypt)          vs 2nd D  (Australia)
+  // M16: 1st J  (Argentina)      vs 2nd H  (Cape Verde)
   var r32 = [
-    {id:'M1',  round:'r32', homeTeam:team('T4','A'), awayTeam:team('R','B'),  homeGoals:null, awayGoals:null, winner:null},
-    {id:'M2',  round:'r32', homeTeam:team('W','F'),  awayTeam:team('R','C'),  homeGoals:null, awayGoals:null, winner:null},
-    {id:'M3',  round:'r32', homeTeam:team('W','E'),  awayTeam:team('T4','D'), homeGoals:null, awayGoals:null, winner:null},
-    {id:'M4',  round:'r32', homeTeam:team('W','I'),  awayTeam:team('T3','F'), homeGoals:null, awayGoals:null, winner:null},
-    {id:'M5',  round:'r32', homeTeam:team('W','G'),  awayTeam:team('R','I'),  homeGoals:null, awayGoals:null, winner:null},
-    {id:'M6',  round:'r32', homeTeam:team('W','D'),  awayTeam:team('T4','B'), homeGoals:null, awayGoals:null, winner:null},
-    {id:'M7',  round:'r32', homeTeam:team('W','H'),  awayTeam:team('R','J'),  homeGoals:null, awayGoals:null, winner:null},
-    {id:'M8',  round:'r32', homeTeam:team('W','K'),  awayTeam:team('R','L'),  homeGoals:null, awayGoals:null, winner:null},
-    {id:'M9',  round:'r32', homeTeam:team('W','C'),  awayTeam:team('R','F'),  homeGoals:null, awayGoals:null, winner:null},
-    {id:'M10', round:'r32', homeTeam:team('T3','E'), awayTeam:team('T3','I'), homeGoals:null, awayGoals:null, winner:null},
-    {id:'M11', round:'r32', homeTeam:team('W','A'),  awayTeam:team('R','E'),  homeGoals:null, awayGoals:null, winner:null},
-    {id:'M12', round:'r32', homeTeam:team('W','L'),  awayTeam:team('T3','K'), homeGoals:null, awayGoals:null, winner:null},
-    {id:'M13', round:'r32', homeTeam:team('W','B'),  awayTeam:team('T3','J'), homeGoals:null, awayGoals:null, winner:null},
-    {id:'M14', round:'r32', homeTeam:team('R','K'),  awayTeam:team('T4','L'), homeGoals:null, awayGoals:null, winner:null},
-    {id:'M15', round:'r32', homeTeam:team('T3','D'), awayTeam:team('T3','G'), homeGoals:null, awayGoals:null, winner:null},
-    {id:'M16', round:'r32', homeTeam:team('W','J'),  awayTeam:team('T4','H'), homeGoals:null, awayGoals:null, winner:null}
+    {id:'M1',  round:'r32', homeTeam:t('R','A'),  awayTeam:t('R','B'),  homeGoals:null, awayGoals:null, winner:null},
+    {id:'M2',  round:'r32', homeTeam:t('W','C'),  awayTeam:t('R','F'),  homeGoals:null, awayGoals:null, winner:null},
+    {id:'M3',  round:'r32', homeTeam:t('W','E'),  awayTeam:t('T3','D'), homeGoals:null, awayGoals:null, winner:null},
+    {id:'M4',  round:'r32', homeTeam:t('W','F'),  awayTeam:t('R','C'),  homeGoals:null, awayGoals:null, winner:null},
+    {id:'M5',  round:'r32', homeTeam:t('R','E'),  awayTeam:t('R','I'),  homeGoals:null, awayGoals:null, winner:null},
+    {id:'M6',  round:'r32', homeTeam:t('W','I'),  awayTeam:t('T3','F'), homeGoals:null, awayGoals:null, winner:null},
+    {id:'M7',  round:'r32', homeTeam:t('W','A'),  awayTeam:t('T3','E'), homeGoals:null, awayGoals:null, winner:null},
+    {id:'M8',  round:'r32', homeTeam:t('W','L'),  awayTeam:t('T3','K'), homeGoals:null, awayGoals:null, winner:null},
+    {id:'M9',  round:'r32', homeTeam:t('W','G'),  awayTeam:t('T3','I'), homeGoals:null, awayGoals:null, winner:null},
+    {id:'M10', round:'r32', homeTeam:t('W','D'),  awayTeam:t('T3','B'), homeGoals:null, awayGoals:null, winner:null},
+    {id:'M11', round:'r32', homeTeam:t('W','H'),  awayTeam:t('R','J'),  homeGoals:null, awayGoals:null, winner:null},
+    {id:'M12', round:'r32', homeTeam:t('R','K'),  awayTeam:t('R','L'),  homeGoals:null, awayGoals:null, winner:null},
+    {id:'M13', round:'r32', homeTeam:t('W','B'),  awayTeam:t('T3','J'), homeGoals:null, awayGoals:null, winner:null},
+    {id:'M14', round:'r32', homeTeam:t('W','K'),  awayTeam:t('T3','L'), homeGoals:null, awayGoals:null, winner:null},
+    {id:'M15', round:'r32', homeTeam:t('R','G'),  awayTeam:t('R','D'),  homeGoals:null, awayGoals:null, winner:null},
+    {id:'M16', round:'r32', homeTeam:t('W','J'),  awayTeam:t('R','H'),  homeGoals:null, awayGoals:null, winner:null}
   ];
 
-  // R16 pairings (winners of R32 matches)
-  // M1/M2 -> R16_1,  M3/M4 -> R16_2,  M5/M6 -> R16_3,  M7/M8 -> R16_4
-  // M9/M10 -> R16_5, M11/M12 -> R16_6, M13/M14 -> R16_7, M15/M16 -> R16_8
-  var r32pairs = [['M1','M2'],['M3','M4'],['M5','M6'],['M7','M8'],
-                  ['M9','M10'],['M11','M12'],['M13','M14'],['M15','M16']];
-  var r16 = r32pairs.map(function(pair, i){
+  // ── R16 PAIRINGS (confirmed official bracket path) ────────────────────
+  // R16-1: winner M1  vs winner M4   (SA/Canada   vs Netherlands/Morocco)
+  // R16-2: winner M3  vs winner M6   (Germany/Par vs France/Sweden)
+  // R16-3: winner M2  vs winner M5   (Brazil/Jap  vs IvoryCoast/Norway)
+  // R16-4: winner M7  vs winner M8   (Mexico/Ecu  vs England/Congo)
+  // R16-5: winner M11 vs winner M12  (Spain       vs Portugal/Croatia)
+  // R16-6: winner M9  vs winner M10  (Belgium/Sen vs USA/Bosnia)
+  // R16-7: winner M15 vs winner M16  (Egypt/Aus   vs Argentina/CapeVerde)
+  // R16-8: winner M13 vs winner M14  (Switz/Alg   vs Colombia/Ghana)
+  var r32map = {M1:0,M2:1,M3:2,M4:3,M5:4,M6:5,M7:6,M8:7,
+                M9:8,M10:9,M11:10,M12:11,M13:12,M14:13,M15:14,M16:15};
+  var r16pairs = [['M1','M4'],['M3','M6'],['M2','M5'],['M7','M8'],
+                  ['M11','M12'],['M9','M10'],['M15','M16'],['M13','M14']];
+
+  var r16 = r16pairs.map(function(pair, i){
     return {id:'R16_'+(i+1), round:'r16', homeTeam:null, awayTeam:null,
             homeLabel:'Winner '+pair[0], awayLabel:'Winner '+pair[1],
+            _homeR32:pair[0], _awayR32:pair[1],
             homeGoals:null, awayGoals:null, winner:null};
   });
 
@@ -658,37 +677,59 @@ function generateKnockout(){
 }
 
 function propagateKoWinners(){
-  if(!koMatches)return;
-  // R32 winners -> R16
-  const r32=koMatches.filter(m=>m.round==='r32');
-  const r16=koMatches.filter(m=>m.round==='r16');
-  // Pair: M73&M83->R16_1, M74&M88->R16_2, M75&M87->R16_3, M76&M82->R16_4
-  //       M79&M85->R16_5, M81&M86->R16_6, M84&M80->R16_7, M78&M77->R16_8 (approx official bracket paths)
-  const r32pairs=[['M73','M83'],['M74','M88'],['M75','M87'],['M76','M82'],['M79','M85'],['M81','M86'],['M84','M80'],['M78','M77']];
-  r32pairs.forEach(([a,b],i)=>{
-    if(!r16[i])return;
-    const ma=r32.find(m=>m.id===a),mb=r32.find(m=>m.id===b);
-    if(ma&&mb){r16[i].homeTeam=ma.winner||null;r16[i].awayTeam=mb.winner||null;r16[i].homeLabel=ma.winner?ma.winner.name:'Winner '+a;r16[i].awayLabel=mb.winner?mb.winner.name:'Winner '+b;}
+  if(!koMatches) return;
+  var r32 = koMatches.filter(function(m){return m.round==='r32';});
+  var r16 = koMatches.filter(function(m){return m.round==='r16';});
+  var qf  = koMatches.filter(function(m){return m.round==='qf';});
+  var sf  = koMatches.filter(function(m){return m.round==='sf';});
+  var fin = koMatches.filter(function(m){return m.round==='final';});
+
+  // R32 -> R16 using stored _homeR32 / _awayR32 labels if available, else positional
+  // Official pairs: [M1,M4] [M3,M6] [M2,M5] [M7,M8] [M11,M12] [M9,M10] [M15,M16] [M13,M14]
+  var r16pairs = [['M1','M4'],['M3','M6'],['M2','M5'],['M7','M8'],
+                  ['M11','M12'],['M9','M10'],['M15','M16'],['M13','M14']];
+  r16pairs.forEach(function(pair, i){
+    if(!r16[i]) return;
+    var ma = r32.find(function(m){return m.id===pair[0];});
+    var mb = r32.find(function(m){return m.id===pair[1];});
+    if(ma && mb){
+      r16[i].homeTeam = ma.winner || null;
+      r16[i].awayTeam = mb.winner || null;
+      r16[i].homeLabel = ma.winner ? ma.winner.name : 'Winner '+pair[0];
+      r16[i].awayLabel = mb.winner ? mb.winner.name : 'Winner '+pair[1];
+    }
   });
-  // R16 -> QF
-  const qf=koMatches.filter(m=>m.round==='qf');
-  [[0,1],[2,3],[4,5],[6,7]].forEach(([a,b],i)=>{
-    if(!qf[i])return;
-    const ma=r16[a],mb=r16[b];
-    if(ma&&mb){qf[i].homeTeam=ma.winner||null;qf[i].awayTeam=mb.winner||null;qf[i].homeLabel=ma.winner?ma.winner.name:'Winner R16_'+(a+1);qf[i].awayLabel=mb.winner?mb.winner.name:'Winner R16_'+(b+1);}
+
+  // R16 -> QF: [R16_1,R16_2] [R16_3,R16_4] [R16_5,R16_6] [R16_7,R16_8]
+  [[0,1],[2,3],[4,5],[6,7]].forEach(function(idx, i){
+    if(!qf[i]) return;
+    var ma = r16[idx[0]], mb = r16[idx[1]];
+    if(ma && mb){
+      qf[i].homeTeam = ma.winner || null;
+      qf[i].awayTeam = mb.winner || null;
+      qf[i].homeLabel = ma.winner ? ma.winner.name : 'Winner R16_'+(idx[0]+1);
+      qf[i].awayLabel = mb.winner ? mb.winner.name : 'Winner R16_'+(idx[1]+1);
+    }
   });
-  // QF -> SF
-  const sf=koMatches.filter(m=>m.round==='sf');
-  [[0,1],[2,3]].forEach(([a,b],i)=>{
-    if(!sf[i])return;
-    const ma=qf[a],mb=qf[b];
-    if(ma&&mb){sf[i].homeTeam=ma.winner||null;sf[i].awayTeam=mb.winner||null;sf[i].homeLabel=ma.winner?ma.winner.name:'Winner QF_'+(a+1);sf[i].awayLabel=mb.winner?mb.winner.name:'Winner QF_'+(b+1);}
+
+  // QF -> SF: [QF1,QF2] [QF3,QF4]
+  [[0,1],[2,3]].forEach(function(idx, i){
+    if(!sf[i]) return;
+    var ma = qf[idx[0]], mb = qf[idx[1]];
+    if(ma && mb){
+      sf[i].homeTeam = ma.winner || null;
+      sf[i].awayTeam = mb.winner || null;
+      sf[i].homeLabel = ma.winner ? ma.winner.name : 'Winner QF_'+(idx[0]+1);
+      sf[i].awayLabel = mb.winner ? mb.winner.name : 'Winner QF_'+(idx[1]+1);
+    }
   });
+
   // SF -> Final
-  const fin=koMatches.find(m=>m.round==='final');
-  if(fin){
-    fin.homeTeam=(sf[0]&&sf[0].winner)||null;fin.awayTeam=(sf[1]&&sf[1].winner)||null;
-    fin.homeLabel=(sf[0]&&sf[0].winner)?sf[0].winner.name:'Winner SF1';fin.awayLabel=(sf[1]&&sf[1].winner)?sf[1].winner.name:'Winner SF2';
+  if(fin[0] && sf[0] && sf[1]){
+    fin[0].homeTeam = sf[0].winner || null;
+    fin[0].awayTeam = sf[1].winner || null;
+    fin[0].homeLabel = sf[0].winner ? sf[0].winner.name : 'Winner SF1';
+    fin[0].awayLabel = sf[1].winner ? sf[1].winner.name : 'Winner SF2';
   }
 }
 
