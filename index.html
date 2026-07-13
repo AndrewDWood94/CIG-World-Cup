@@ -713,7 +713,7 @@ function propagateKoWinners(){
   });
 
   // QF -> SF: [QF1,QF2] [QF3,QF4]
-  [[0,1],[2,3]].forEach(function(idx, i){
+  [[0,2],[1,3]].forEach(function(idx, i){
     if(!sf[i]) return;
     var ma = qf[idx[0]], mb = qf[idx[1]];
     if(ma && mb){
