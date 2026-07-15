@@ -535,6 +535,7 @@ var settings=load('sw_settings',DEFAULT_SETTINGS);
 var participants=load('sw_participants',[]);
 var scores=load('sw_scores',{});
 var koMatches=load('sw_ko_matches',null);
+if(koMatches) forceFixFinal();
 var drawDone=load('sw_drawdone',false);
 var adminUnlocked=false;
 
@@ -674,6 +675,26 @@ function generateKnockout(){
   toast('Knockout bracket generated!');
   renderKnockout();
   if(adminUnlocked) renderAdminKoScores();
+}
+
+// One-time self-heal: forces the Final to correctly reflect SF1/SF2 winners
+// in case stale data ever causes a mismatch (e.g. after a bracket edit).
+function forceFixFinal(){
+  if(!koMatches) return;
+  var sf = koMatches.filter(function(m){return m.round==='sf';});
+  var fin = koMatches.find(function(m){return m.round==='final';});
+  if(!fin || sf.length<2) return;
+  var sf1win = sf[0].winner, sf2win = sf[1].winner;
+  var changed = false;
+  if(sf1win && (!fin.homeTeam || fin.homeTeam.name !== sf1win.name)){
+    fin.homeTeam = sf1win; fin.homeLabel = sf1win.name; changed = true;
+  }
+  if(sf2win && (!fin.awayTeam || fin.awayTeam.name !== sf2win.name)){
+    fin.awayTeam = sf2win; fin.awayLabel = sf2win.name; changed = true;
+  }
+  if(changed){
+    save('sw_ko_matches', koMatches);
+  }
 }
 
 function propagateKoWinners(){
