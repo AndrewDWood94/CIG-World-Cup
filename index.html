@@ -716,6 +716,21 @@ function propagateKoWinners(){
   var sf  = koMatches.filter(function(m){return m.round==='sf';});
   var fin = koMatches.filter(function(m){return m.round==='final';});
 
+  // Fills one side of a downstream match with the winner feeding into it. If the
+  // incoming team differs from whoever previously occupied that slot (e.g. an
+  // earlier round's result was corrected after this match was already scored),
+  // any score/winner already recorded for THIS match is stale and must be cleared
+  // - otherwise a team that never actually played could keep advancing.
+  function setSlot(match, side, newTeam, fallbackLabel){
+    var prevName = match[side+'Team'] ? match[side+'Team'].name : null;
+    var newName = newTeam ? newTeam.name : null;
+    match[side+'Team'] = newTeam || null;
+    match[side+'Label'] = newTeam ? newTeam.name : fallbackLabel;
+    if(prevName !== newName){
+      match.homeGoals = null; match.awayGoals = null; match.winner = null;
+    }
+  }
+
   // R32 -> R16 using stored _homeR32 / _awayR32 labels if available, else positional
   // Official pairs: [M1,M4] [M3,M6] [M2,M5] [M7,M8] [M11,M12] [M9,M10] [M15,M16] [M13,M14]
   var r16pairs = [['M1','M4'],['M3','M6'],['M2','M5'],['M7','M8'],
@@ -725,10 +740,8 @@ function propagateKoWinners(){
     var ma = r32.find(function(m){return m.id===pair[0];});
     var mb = r32.find(function(m){return m.id===pair[1];});
     if(ma && mb){
-      r16[i].homeTeam = ma.winner || null;
-      r16[i].awayTeam = mb.winner || null;
-      r16[i].homeLabel = ma.winner ? ma.winner.name : 'Winner '+pair[0];
-      r16[i].awayLabel = mb.winner ? mb.winner.name : 'Winner '+pair[1];
+      setSlot(r16[i], 'home', ma.winner, 'Winner '+pair[0]);
+      setSlot(r16[i], 'away', mb.winner, 'Winner '+pair[1]);
     }
   });
 
@@ -737,10 +750,8 @@ function propagateKoWinners(){
     if(!qf[i]) return;
     var ma = r16[idx[0]], mb = r16[idx[1]];
     if(ma && mb){
-      qf[i].homeTeam = ma.winner || null;
-      qf[i].awayTeam = mb.winner || null;
-      qf[i].homeLabel = ma.winner ? ma.winner.name : 'Winner R16_'+(idx[0]+1);
-      qf[i].awayLabel = mb.winner ? mb.winner.name : 'Winner R16_'+(idx[1]+1);
+      setSlot(qf[i], 'home', ma.winner, 'Winner R16_'+(idx[0]+1));
+      setSlot(qf[i], 'away', mb.winner, 'Winner R16_'+(idx[1]+1));
     }
   });
 
@@ -749,19 +760,15 @@ function propagateKoWinners(){
     if(!sf[i]) return;
     var ma = qf[idx[0]], mb = qf[idx[1]];
     if(ma && mb){
-      sf[i].homeTeam = ma.winner || null;
-      sf[i].awayTeam = mb.winner || null;
-      sf[i].homeLabel = ma.winner ? ma.winner.name : 'Winner QF_'+(idx[0]+1);
-      sf[i].awayLabel = mb.winner ? mb.winner.name : 'Winner QF_'+(idx[1]+1);
+      setSlot(sf[i], 'home', ma.winner, 'Winner QF_'+(idx[0]+1));
+      setSlot(sf[i], 'away', mb.winner, 'Winner QF_'+(idx[1]+1));
     }
   });
 
   // SF -> Final
   if(fin[0] && sf[0] && sf[1]){
-    fin[0].homeTeam = sf[0].winner || null;
-    fin[0].awayTeam = sf[1].winner || null;
-    fin[0].homeLabel = sf[0].winner ? sf[0].winner.name : 'Winner SF1';
-    fin[0].awayLabel = sf[1].winner ? sf[1].winner.name : 'Winner SF2';
+    setSlot(fin[0], 'home', sf[0].winner, 'Winner SF1');
+    setSlot(fin[0], 'away', sf[1].winner, 'Winner SF2');
   }
 }
 
@@ -900,7 +907,7 @@ function renderKnockout(){
   rounds.forEach(round=>{
     html+='<div class="bracket-round"><div class="round-header">'+round.label+'</div><div class="round-matches">';
     round.matches.forEach(m=>{
-      const played=m.homeGoals!==null&&m.awayGoals!==null;
+      const played=m.homeGoals!=null&&m.awayGoals!=null;
       const hWin=played&&m.homeGoals>m.awayGoals;const aWin=played&&m.awayGoals>m.homeGoals;
       const hOwner=m.homeTeam?teamOwner(m.homeTeam.name):null;
       const aOwner=m.awayTeam?teamOwner(m.awayTeam.name):null;
