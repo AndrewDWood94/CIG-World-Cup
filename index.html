@@ -535,7 +535,7 @@ var settings=load('sw_settings',DEFAULT_SETTINGS);
 var participants=load('sw_participants',[]);
 var scores=load('sw_scores',{});
 var koMatches=load('sw_ko_matches',null);
-if(koMatches) forceFixFinal();
+if(koMatches){ ensureThirdPlaceMatch(); forceFixFinal(); }
 var drawDone=load('sw_drawdone',false);
 var adminUnlocked=false;
 
@@ -668,8 +668,10 @@ function generateKnockout(){
   });
   var fin = [{id:'FINAL', round:'final', homeTeam:null, awayTeam:null,
               homeLabel:'TBD', awayLabel:'TBD', homeGoals:null, awayGoals:null, winner:null}];
+  var third = [{id:'THIRD', round:'third', homeTeam:null, awayTeam:null,
+                homeLabel:'TBD', awayLabel:'TBD', homeGoals:null, awayGoals:null, winner:null}];
 
-  koMatches = r32.concat(r16).concat(qf).concat(sf).concat(fin);
+  koMatches = r32.concat(r16).concat(qf).concat(sf).concat(third).concat(fin);
   propagateKoWinners();
   save('sw_ko_matches', koMatches);
   toast('Knockout bracket generated!');
@@ -708,8 +710,24 @@ function forceFixFinal(){
   }
 }
 
+// Retroactively inserts the 3rd place play-off match into an already-generated
+// bracket that predates this feature, without touching any existing scores.
+function ensureThirdPlaceMatch(){
+  if(!koMatches) return;
+  var third = koMatches.find(function(m){return m.round==='third';});
+  if(!third){
+    third = {id:'THIRD', round:'third', homeTeam:null, awayTeam:null,
+             homeLabel:'TBD', awayLabel:'TBD', homeGoals:null, awayGoals:null, winner:null};
+    var finalIdx = koMatches.findIndex(function(m){return m.round==='final';});
+    if(finalIdx===-1) koMatches.push(third);
+    else koMatches.splice(finalIdx, 0, third);
+    save('sw_ko_matches', koMatches);
+  }
+}
+
 function propagateKoWinners(){
   if(!koMatches) return;
+  ensureThirdPlaceMatch();
   var r32 = koMatches.filter(function(m){return m.round==='r32';});
   var r16 = koMatches.filter(function(m){return m.round==='r16';});
   var qf  = koMatches.filter(function(m){return m.round==='qf';});
@@ -769,6 +787,17 @@ function propagateKoWinners(){
   if(fin[0] && sf[0] && sf[1]){
     setSlot(fin[0], 'home', sf[0].winner, 'Winner SF1');
     setSlot(fin[0], 'away', sf[1].winner, 'Winner SF2');
+  }
+
+  // SF losers -> Third place playoff
+  var third = koMatches.filter(function(m){return m.round==='third';});
+  if(third[0] && sf[0] && sf[1]){
+    function loserOf(m){
+      if(!m.winner || !m.homeTeam || !m.awayTeam) return null;
+      return m.winner.name === m.homeTeam.name ? m.awayTeam : m.homeTeam;
+    }
+    setSlot(third[0], 'home', loserOf(sf[0]), 'Loser SF1');
+    setSlot(third[0], 'away', loserOf(sf[1]), 'Loser SF2');
   }
 }
 
@@ -901,6 +930,7 @@ function renderKnockout(){
     {key:'r16',label:'Round of 16',matches:koMatches.filter(m=>m.round==='r16')},
     {key:'qf',label:'Quarter-finals',matches:koMatches.filter(m=>m.round==='qf')},
     {key:'sf',label:'Semi-finals',matches:koMatches.filter(m=>m.round==='sf')},
+    {key:'third',label:'3rd Place',matches:koMatches.filter(m=>m.round==='third')},
     {key:'final',label:'Final',matches:koMatches.filter(m=>m.round==='final')}
   ];
   let html='<div style="overflow-x:auto;padding-bottom:1rem"><div class="bracket-wrap">';
@@ -1057,6 +1087,7 @@ function renderAdminKoScores(){
     {key:'r16',label:'Round of 16'},
     {key:'qf',label:'Quarter-finals'},
     {key:'sf',label:'Semi-finals'},
+    {key:'third',label:'3rd Place Playoff'},
     {key:'final',label:'Final'}
   ];
   let html='';
@@ -1191,7 +1222,7 @@ function findHighestScoringGames() {
       if(m.homeGoals===null || m.awayGoals===null) return;
       if(!m.homeTeam || !m.awayTeam) return;
       var tot = m.homeGoals + m.awayGoals;
-      allGames.push({totalGoals:tot, homeTeam:m.homeTeam.name, awayTeam:m.awayTeam.name, score:m.homeGoals+'-'+m.awayGoals, stage:m.round.toUpperCase()});
+      allGames.push({totalGoals:tot, homeTeam:m.homeTeam.name, awayTeam:m.awayTeam.name, score:m.homeGoals+'-'+m.awayGoals, stage:(m.round==='third'?'3rd Place Playoff':m.round.toUpperCase())});
       if(tot > maxGoals) maxGoals = tot;
     });
   }
